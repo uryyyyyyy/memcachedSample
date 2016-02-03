@@ -11,7 +11,7 @@ public class Main {
 
 	public static void main(String[] args) throws IOException, InterruptedException {
 		MemcachedClient c = new MemcachedClient(
-				new InetSocketAddress("172.17.0.2", 11121)
+				new InetSocketAddress("172.17.0.2", 11211)
 		);
 
 		// Store a value (async) for one hour
