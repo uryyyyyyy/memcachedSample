@@ -1,34 +1,42 @@
 package com.github.uryyyyyyy.memcached.client.elasticache
 
-import java.net.InetSocketAddress
 import java.util.{Date, Random}
 
-import net.spy.memcached.MemcachedClient
 
-import scala.collection.JavaConverters._
-
-
+/**
+  * how to use ElastiCacheClientM
+  */
 object Main {
 
   def main(args: Array[String]): Unit = {
-    System.out.print("start")
-
-    val host: String = args(0)
-    val inet: InetSocketAddress = new InetSocketAddress(host, 11211)
+    val client: ElastiCacheClientM = new ElastiCacheClientMImpl(args(0), 11211)
 
     val random: Random = new Random(111)
-    val c: MemcachedClient = new MemcachedClient(inet)
-    val points = c.getAllNodeEndPoints.asScala.toList
 
-
-    while (true) {
-      val randKey: String = random.nextDouble.toString
-      val time: String = new Date().toString
-      c.set(randKey, 1000, "valueee")
-      val myObject3: Any = c.get(randKey)
-      System.out.println(randKey + " value: " + myObject3 + " time: " + time)
+    while(true){
+      val randKey: String = random.nextInt(100).toString
+      val result = action(client, randKey)
+      println(result + ". time: " + new Date().toString)
     }
+    client.shutdown()
+  }
 
+  def action(client: ElastiCacheClientM, key: String): String = {
+    Thread.sleep(100)
+    client.get(key, classOf[String]) match {
+      case Some(res) => res
+      case None => {
+        val result = heavyAction(key)
+        client.setAsync(key, 3600, result)
+        result
+      }
+    }
+  }
+
+  def heavyAction(key: String): String ={
+    println("heavyAction start")
+    Thread.sleep(500)
+    "result of " + key
   }
 
 }
