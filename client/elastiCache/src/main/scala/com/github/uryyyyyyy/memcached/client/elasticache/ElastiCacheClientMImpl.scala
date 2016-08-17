@@ -65,3 +65,26 @@ trait ElastiCacheClientM {
   def setAsync[A](key: String, expireSec: Int, value: A): Unit
   def shutdown():Unit
 }
+
+class ElastiCacheClientMForLocal(configHost: String, port:Int) extends ElastiCacheClientM {
+
+  val client: MemcachedClient = new MemcachedClient(new InetSocketAddress(configHost, port))
+
+  override def get[A](key: String, clazz: Class[A]): Option[A] = {
+    val bytes = client.get(key).asInstanceOf[Array[Byte]]
+    if(bytes == null){
+      None
+    }else{
+      Some(Codec.decode(bytes, clazz))
+    }
+  }
+
+  override def setAsync[A](key: String, expireSec: Int, value: A): Unit = {
+    val bytes = Codec.encode(value)
+    client.set(key, expireSec, bytes)
+  }
+
+  override def shutdown(): Unit = {
+    client.shutdown()
+  }
+}
