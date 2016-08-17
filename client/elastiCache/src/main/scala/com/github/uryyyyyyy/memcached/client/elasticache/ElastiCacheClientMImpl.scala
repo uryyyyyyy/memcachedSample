@@ -10,7 +10,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ElastiCacheClientMImpl(configHost: String, port:Int) extends ElastiCacheClientM {
 
-  //キューが溢れたら無視するとかやりたいかも？
   implicit val context = ExecutionContext.fromExecutorService(Executors.newSingleThreadExecutor())
 
   val configClient: MemcachedClient = new MemcachedClient(new InetSocketAddress(configHost, port))
@@ -28,6 +27,7 @@ class ElastiCacheClientMImpl(configHost: String, port:Int) extends ElastiCacheCl
   }
 
   override def get[A](key: String, clazz: Class[A]): Option[A] = {
+    if(inChanging) return None
     try{
       val hash = Math.abs(key.hashCode % clientsLength)
       val bytes = clients(hash).get(key).asInstanceOf[Array[Byte]]
@@ -48,6 +48,7 @@ class ElastiCacheClientMImpl(configHost: String, port:Int) extends ElastiCacheCl
   }
 
   override def setAsync[A](key: String, expireSec: Int, value: A): Unit = {
+    if(inChanging) return
     val hash = Math.abs(key.hashCode % clientsLength)
     val bytes = Codec.encode(value)
     clients(hash).set(key, expireSec, bytes)
